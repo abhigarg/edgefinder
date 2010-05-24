@@ -17,9 +17,7 @@
 #include <jni.h>
 #include <math.h>
 
-#define THRESHOLD 30
-
-void Java_bwr_edgefinder_EdgeView_findEdges(JNIEnv* env, jobject thiz, jbyteArray source, 
+void Java_bwr_edgefinder_EdgeView_findEdges(JNIEnv* env, jobject thiz, jint threshold, jbyteArray source, 
 	jint width, jint height, jobject canvas, jobject paint)
 {
 	int px, cx, nx, ly, val, y, x, y_width, num_points = 0;
@@ -41,7 +39,7 @@ void Java_bwr_edgefinder_EdgeView_findEdges(JNIEnv* env, jobject thiz, jbyteArra
 			ly = (sb[(y-1)*width+x]/2) - (sb[(y+1)*width+x]/2);
 			val = abs(px - nx) + abs(ly);
 
-			if(val > THRESHOLD) {
+			if(val > threshold) {
 				(*env)->CallVoidMethod(env, canvas, drawPoint, (jfloat)x, (jfloat)y, paint);
 			}
 

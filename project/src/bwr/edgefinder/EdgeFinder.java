@@ -16,9 +16,13 @@
 package bwr.edgefinder;
 
 import java.io.IOException;
+
 import android.app.Activity;
 import android.hardware.Camera;
+import android.media.AudioManager;
+import android.media.SoundPool;
 import android.os.Bundle;
+import android.view.KeyEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.WindowManager;
@@ -30,7 +34,10 @@ public class EdgeFinder extends Activity implements SurfaceHolder.Callback {
 	private EdgeView edgeView;
 	private SurfaceView cameraView;
 	private FrameLayout frameLayout;
-
+	
+	private SoundPool soundPool;
+	private int shutterSound = 0;
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -53,6 +60,16 @@ public class EdgeFinder extends Activity implements SurfaceHolder.Callback {
 		
 		// Prevent camera preview from showing up first
 		edgeView.postInvalidate();
+		
+		soundPool = new SoundPool(1, AudioManager.STREAM_NOTIFICATION, 0);
+		shutterSound = soundPool.load(this, R.raw.camera_click, 0);
+	}
+	
+	@Override
+	protected void onDestroy() {
+		super.onDestroy();
+		soundPool.release();
+		soundPool = null;
 	}
 
 	@Override
@@ -69,15 +86,8 @@ public class EdgeFinder extends Activity implements SurfaceHolder.Callback {
 			camera = null;
 		}
 	}
-
-	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-		Camera.Parameters parameters = camera.getParameters();
-		parameters.setPreviewSize(width, height); // TODO: check that width, height are a valid camera preview size
-		camera.setParameters(parameters);
-		camera.startPreview();
-	}
-
-	public void surfaceCreated(SurfaceHolder holder) {
+	
+	private void startCameraPreview() {
 		camera = Camera.open();
 		try {
 			camera.setPreviewDisplay(cameraView.getHolder());
@@ -87,7 +97,32 @@ public class EdgeFinder extends Activity implements SurfaceHolder.Callback {
 		camera.setPreviewCallback(edgeView);
 	}
 
+	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+		Camera.Parameters parameters = camera.getParameters();
+		parameters.setPreviewSize(width, height); // TODO: check that width, height are a valid camera preview size
+		camera.setParameters(parameters);
+		camera.startPreview();
+	}
+
+	public void surfaceCreated(SurfaceHolder holder) {
+		startCameraPreview();
+	}
+
 	public void surfaceDestroyed(SurfaceHolder holder) {
 		stopCameraPreview();
 	}
+
+	@Override
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+		if (keyCode==KeyEvent.KEYCODE_CAMERA || keyCode==KeyEvent.KEYCODE_SEARCH) {
+			edgeView.captureNextFrame();
+
+			if(soundPool != null)
+				soundPool.play(shutterSound, 1f, 1f, 0, 0, 1);
+			
+			return true;
+		}
+		return false;
+	}
+
 }
